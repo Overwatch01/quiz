@@ -9,18 +9,17 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func main() {
 
 	fileNamePtr := flag.String("csv", "problems.csv", "a csv file in the format of 'question, answer' (default \"problems.csv\")")
+	timerPtr := flag.Int("t", 10, "configured time for the game to run")
 	flag.Parse()
 
 	quizzes := readQuizFile(*fileNamePtr)
-	score := setQuiz(quizzes)
-
-	fmt.Printf("You scored %d out of %d.", score, len(quizzes))
-
+	setQuiz(quizzes, *timerPtr)
 }
 
 func readQuizFile(fileName string) map[string]int {
@@ -70,12 +69,19 @@ func readQuizFile(fileName string) map[string]int {
 	return quizzes
 }
 
-func setQuiz(quizzes map[string]int) int {
+func setQuiz(quizzes map[string]int, timer int) {
 	score := 0
 	quizCount := 0
 	inputReader := bufio.NewReader(os.Stdin)
 	fmt.Println("Simple Quiz")
 	fmt.Println("============")
+
+	timerChan := time.NewTimer(time.Duration(timer) * time.Second)
+	go func() {
+		<-timerChan.C
+		setScore(len(quizzes), score)
+		os.Exit(1)
+	}()
 
 	for k, v := range quizzes {
 		quizCount++
@@ -90,5 +96,9 @@ func setQuiz(quizzes map[string]int) int {
 			score++
 		}
 	}
-	return score
+	setScore(len(quizzes), score)
+}
+
+func setScore(quizCount, score int) {
+	fmt.Printf("\n You scored %d out of %d.", score, quizCount)
 }
